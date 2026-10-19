@@ -1,0 +1,16 @@
+name: Isabelle extraction and router
+on: [push, pull_request]
+jobs:
+  trace:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ocaml-nox ocaml-findlib libzarith-ocaml-dev libgnustep-base-dev gnustep-make gobjc
+      - name: Install checksum-verified Isabelle
+        run: |
+          curl --fail --location --output /tmp/isabelle.tar.gz https://isabelle.in.tum.de/website-Isabelle2025-2/dist/Isabelle2025-2_linux.tar.gz
+          echo 'a20a507bc7c1270d8be96a9f3fbec06345387789d2dc2c4d3df6260d47bfb33c  /tmp/isabelle.tar.gz' | sha256sum --check
+          tar -xzf /tmp/isabelle.tar.gz -C /tmp
+      - run: ISABELLE=/tmp/Isabelle2025-2/bin/isabelle sh build.sh
+      - run: gcc -Wall -Wextra -Werror c/torus_trace.c test/trace_test.c -o .build/trace_test && .build/trace_test
+      - run: python3 test/router_test.py

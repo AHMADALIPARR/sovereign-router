@@ -1,55 +1,70 @@
 #import <Foundation/Foundation.h>
-#import <caml/mlvalues.h>
-#import <caml/callback.h>
-#import <caml/alloc.h>
+#include <stdint.h>
+#include <errno.h>
+#include <caml/mlvalues.h>
+#include <caml/callback.h>
+#include <caml/alloc.h>
+#include <caml/memory.h>
+#include <caml/fail.h>
 
 @interface SovereignTraceRouter : NSObject
-- (void)routeExecutionTraceWithBudget:(NSInteger)budget;
+- (NSString *)routeExecutionTraceWithBudget:(uint32_t)budget;
 @end
 
 @implementation SovereignTraceRouter
-
-- (instancetype)init {
-    self = [super init];
-    if (self) {
-        // Boot the embedded OCaml runtime within the Obj-C process space
-        char *dummy_argv[2] = { "sovereign_router", NULL };
-        caml_main(dummy_argv);
-        NSLog(@"[+] OCaml formal verification runtime initialized.");
+- (NSString *)routeExecutionTraceWithBudget:(uint32_t)budget {
+    CAMLparam0();
+    CAMLlocal2(argument, result);
+    if (budget > UINT32_MAX / 2) {
+        [NSException raise:NSInvalidArgumentException format:@"Budget exceeds checked uint32 trace domain"];
     }
-    return self;
+    const value *closure = caml_named_value("torus_trace_calc");
+    if (!closure) [NSException raise:NSInternalInconsistencyException format:@"Trace backend not registered"];
+    char decimal[32];
+    snprintf(decimal, sizeof decimal, "%u", budget);
+    argument = caml_copy_string(decimal);
+    result = caml_callback_exn(*closure, argument);
+    if (Is_exception_result(result)) [NSException raise:NSInternalInconsistencyException format:@"Trace backend rejected input"];
+    NSString *trace = [NSString stringWithUTF8String:String_val(result)];
+    CAMLreturnT(NSString *, trace);
 }
-
-- (void)routeExecutionTraceWithBudget:(NSInteger)budget {
-    // 1. Locate the registered OCaml closure by name
-    const value *trace_closure = caml_named_value("torus_trace_calc");
-    
-    if (trace_closure == NULL) {
-        NSLog(@"[-] FATAL: Failed to resolve Isabelle/HOL closure 'torus_trace_calc'.");
-        exit(EXIT_FAILURE);
-    }
-    
-    // 2. Invoke the verified theorem across the C boundary
-    // Val_int converts the C/Obj-C int to an OCaml tagged integer
-    value result = caml_callback(*trace_closure, Val_int(budget));
-    
-    // Int_val extracts the raw integer back from OCaml's memory representation
-    NSInteger prime_trace = Int_val(result);
-    
-    NSLog(@"[+] 8D Octonion Execution Budget: %ld", (long)budget);
-    NSLog(@"[+] Verified Prime Trace (A_89/2462 Throat): %ld", (long)prime_trace);
-    
-    // 3. (Optional) Pipe prime_trace directly to your objc-router/metal bridge
-}
-
 @end
 
-int main(int argc, const char * argv[]) {
-    @autoreleasepool {
-        SovereignTraceRouter *router = [[SovereignTraceRouter alloc] init];
-        
-        // Example: Simulating the execution budget mapping to the trace
-        [router routeExecutionTraceWithBudget:9959];
+int main(int argc, char **argv) {
+    if (argc > 3) { fprintf(stderr, "usage: sovereign_router [budget [ledger.jsonl]]\n"); return 2; }
+    const char *input = argc > 1 ? argv[1] : "9959";
+    char *end = NULL;
+    errno = 0;
+    unsigned long long budget = strtoull(input, &end, 10);
+    if (errno || !*input || *end || *input == '-' || budget > UINT32_MAX / 2) {
+        fprintf(stderr, "budget must be in [0,2147483647]\n"); return 2;
     }
-    return 0;
+    char *runtime_args[] = {"sovereign_router", NULL};
+    caml_startup(runtime_args);
+    NSAutoreleasePool *pool = [NSAutoreleasePool new];
+    int status = 0;
+    @try {
+        SovereignTraceRouter *router = [SovereignTraceRouter new];
+        NSString *trace = [router routeExecutionTraceWithBudget:(uint32_t)budget];
+        NSDictionary *entry = [NSDictionary dictionaryWithObjectsAndKeys:
+            [NSNumber numberWithUnsignedLongLong:budget], @"budget", trace, @"trace", @"Isabelle/OCaml", @"backend", nil];
+        NSError *error = nil;
+        NSData *json = [NSJSONSerialization dataWithJSONObject:entry options:0 error:&error];
+        if (!json) [NSException raise:NSInternalInconsistencyException format:@"JSON encoding failed: %@", error];
+        NSMutableData *line = [NSMutableData dataWithData:json];
+        [line appendData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        if (argc == 3) {
+            FILE *ledger = fopen(argv[2], "ab");
+            if (!ledger) [NSException raise:NSInternalInconsistencyException format:@"Cannot open ledger"];
+            BOOL wrote = fwrite([line bytes], 1, [line length], ledger) == [line length];
+            int closed = fclose(ledger);
+            if (!wrote || closed) [NSException raise:NSInternalInconsistencyException format:@"Ledger write failed"];
+        }
+        fwrite([line bytes], 1, [line length], stdout);
+        [router release];
+    } @catch (NSException *error) {
+        fprintf(stderr, "%s\n", [[error reason] UTF8String]); status = 1;
+    }
+    [pool drain];
+    return status;
 }

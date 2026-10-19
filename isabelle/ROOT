@@ -1,0 +1,3 @@
+session Sovereign_Trace = HOL +
+  options [document = false]
+  theories Torus_Trace

@@ -1,26 +1,22 @@
-; ==================================================================
-; APOLLO GUIDANCE COMPUTER (AGC) CORE ROPE KERNEL
-; Mission: Octonion Prime Trace Extraction (A_89/2462)
-; Weaver: LOL (Little Old Lady) Core Rope Loom
-; Constraints: Fixed ROM, zero dynamic allocation, radiation-hardened
-; ==================================================================
+# Positive fixed-point trace on the Block II AGC, domain 0..8191.
+# Input BUDGET, output TRACE; STATUS=1 on overflow, 0 on success.
+BUDGET          EQUALS          0050
+TRACE           EQUALS          0051
+STATUS          EQUALS          0052
+Q               EQUALS          0002
 
-; Erasable Memory Map (RAM - 16-bit words)
-BUDGET_REG      EQU     $0050       ; Temporal budget R(q) storage
-TRACE_LEDGER    EQU     $0051       ; Cryptographic trace ledger offset
-
-EXTRACT_PRIME_TRACE:
-    CA      BUDGET_REG              ; Clear Accumulator and Add the temporal budget R(q)
-    AD      BUDGET_REG              ; Add R(q) to the Accumulator (t(q) = 2 * R(q))
-    
-    ; The trace is now held in the 16-bit accumulator. 
-    ; It must be locked into the erasable ledger immediately.
-    
-    TS      TRACE_LEDGER            ; Transfer to Storage: Commit trace to ledger memory
-    TC      ADVANCE_STATE           ; Transfer Control back to the supervisor mesh
-
-ADVANCE_STATE:
-    ; Increment the ledger pointer and return to the executive loop
-    CS      ONE_CONSTANT            ; Load -1 into accumulator
-    ADS     LEDGER_POINTER          ; Decrement available ledger space
-    TCF     EXECUTIVE_RETURN        ; Terminate task and return control
+                SETLOC         4000
+EXTRACT         CA             BUDGET
+                AD             BUDGET
+                TS             TRACE
+                TCF            SUCCESS
+OVERFLOW        CA             ONE
+                TS             STATUS
+                CA             ZERO
+                TS             TRACE
+                TC             Q
+SUCCESS         CA             ZERO
+                TS             STATUS
+                TC             Q
+ONE             DEC            1
+ZERO            DEC            0
