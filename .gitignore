@@ -1,0 +1,4 @@
+*.o
+sovereign_router
+trace_backend.o
+.DS_Store
