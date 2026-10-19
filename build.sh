@@ -15,10 +15,10 @@ set -e
 # torus_trace.ml compiles to module Torus_trace, and the build fails
 # with "Unbound module TorusTrace". Isabelle writes torus_trace.ml;
 # rename it to TorusTrace.ml (or the module name breaks).
-ocamlopt -output-obj -o trace_backend.o extraction/TorusTrace.ml trace_export.ml
+ocamlopt -output-obj -o trace_backend.o extraction/TorusTrace.ml ocaml/trace_export.ml
 
 # 2. Compile the Objective-C router and link the OCaml embedded runtime
-clang -o sovereign_router Router.m trace_backend.o \
+clang -o sovereign_router objc/Router.m trace_backend.o \
       -I $(ocamlopt -where) \
       -L $(ocamlopt -where) -lasmrun -lm -ldl -fobjc-arc \
       -framework Foundation

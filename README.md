@@ -5,9 +5,9 @@ This repo implements that trace four ways, all agreeing:
 
 | Implementation | File | Status |
 |---|---|---|
-| C reference | `torus_trace.c` | **Verified by execution** (9959 → 19918) |
-| OCaml FFI wrapper | `trace_export.ml` | Written (needs OCaml + macOS to build) |
-| Objective-C router | `Router.m` | Written (needs macOS Foundation) |
+| C reference | `c/torus_trace.c` | **Verified by execution** (9959 → 19918) |
+| OCaml FFI wrapper | `ocaml/trace_export.ml` | Written (needs OCaml + macOS to build) |
+| Objective-C router | `objc/Router.m` | Written (needs macOS Foundation) |
 | AGC core-rope kernel | `agc/torus_trace.agc` | Written, not executed (no AGC emulator) |
 
 The Isabelle/HOL extraction (`extraction/TorusTrace.ml`) is the
@@ -22,7 +22,7 @@ name, and `trace_export.ml` does `open TorusTrace`).
 
 1. Isabelle/HOL defines `state_trace` and extracts it to OCaml
    (`extraction/README.md` has the `export_code` command).
-2. `trace_export.ml` wraps it (`trace_ffi`) and registers it as the
+2. `ocaml/trace_export.ml` wraps it (`trace_ffi`) and registers it as the
    named callback `torus_trace_calc`.
 3. `ocamlopt -output-obj` compiles the OCaml into a native object
    file embedding the OCaml runtime.
