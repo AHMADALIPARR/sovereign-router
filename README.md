@@ -6,6 +6,8 @@
 
 Isabelle/HOL · OCaml/Zarith · Objective-C · C · AGC
 
+[![CI on review branch](https://github.com/AHMADALIPARR/sovereign-router/actions/workflows/test.yml/badge.svg?branch=repair%2Fcomplete-modules)](https://github.com/AHMADALIPARR/sovereign-router/actions/workflows/test.yml?query=branch%3Arepair%2Fcomplete-modules) [![Specification: Isabelle HOL](docs/media/badges/specification.svg)](#architecture) [![Backend: OCaml + Zarith](docs/media/badges/backend.svg)](#architecture) [![Native: Objective-C](docs/media/badges/native.svg)](#architecture) [![License: SnapKitty Opaque](docs/media/badges/license.svg)](LICENSE)
+
 <img src="docs/media/demo.gif" alt="Actual native router output for zero, budget 9959 and the checked upper boundary" width="760">
 
 <sub>Actual program output, rendered as a compact replay. Animation timing is edited.</sub>
