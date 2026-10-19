@@ -2,3 +2,10 @@
 sovereign_router
 trace_backend.o
 .DS_Store
+.build/
+*.cmx
+*.cmi
+*.d
+*.bin
+*.symtab
+*.html
