@@ -1,0 +1,23 @@
+{
+  "capture_kind": "Actual command output rendered as terminal cards; presentation timing is edited",
+  "stages": [
+    [
+      "$ sovereign_router 0",
+      [
+        "{\"backend\": \"Isabelle/OCaml\",\"trace\": \"0\",\"budget\": 0}"
+      ]
+    ],
+    [
+      "$ sovereign_router 9959",
+      [
+        "{\"backend\": \"Isabelle/OCaml\",\"trace\": \"19918\",\"budget\": 9959}"
+      ]
+    ],
+    [
+      "$ sovereign_router 2147483647",
+      [
+        "{\"backend\": \"Isabelle/OCaml\",\"trace\": \"4294967294\",\"budget\": 2147483647}"
+      ]
+    ]
+  ]
+}
